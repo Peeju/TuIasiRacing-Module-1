@@ -1,23 +1,23 @@
 #include <Arduino.h>
-#include "MPU6050_light/MPU6050_light.h"
+#include "MPU6050/MPU6050.h"
 #include "adcObj/adcObj.hpp"
 #include <ArduinoLog.h>
 #include "driver/can.h"
+#include "aditional/aditional.hpp"
+
 
 #define TX_GPIO_NUM   GPIO_NUM_14
 #define RX_GPIO_NUM   GPIO_NUM_27
-#define LOG_LEVEL LOG_LEVEL_NOTICE
-
-//todo: convert MPU values from double to int
-//!debug tx_msg_transmit -- probably needs extended frame;
-//todo: can transmit error more conclusive
+#define LOG_LEVEL LOG_LEVEL_VERBOSE
 
 
 
-byte status;
 
 
-MPU6050 mpu(Wire);
+u_int16_t status;
+
+
+MPU6050 mpu;
 adcObj damper1(ADC1_CHANNEL_4);
 adcObj damper2(ADC1_CHANNEL_4);
 adcObj damper3(ADC1_CHANNEL_4);
@@ -31,7 +31,9 @@ static const can_general_config_t g_config = {.mode = TWAI_MODE_NO_ACK, .tx_io =
 static const can_timing_config_t t_config = CAN_TIMING_CONFIG_500KBITS();
 static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
 
-  
+twai_message_t tx_msg_mpu;
+twai_message_t tx_msg_mpu2;
+twai_message_t tx_msg_damp;
 
 void setup() {
   Serial.begin(9600);
@@ -39,15 +41,16 @@ void setup() {
 
   Wire.begin();
 
-  status = mpu.begin();
+  mpu.initialize();
+  status=mpu.testConnection();
 
    if(status!=0) {
     Log.errorln("MPU6050 not initialized - ERROR STATUS: %d", status);
    }
    else {
     Log.notice("MPU status: %d\n", status);
-    Log.notice("Calculating offsets, do not move MPU6050\n");
-    mpu.calcOffsets();
+    //Log.notice("Calculating offsets, do not move MPU6050\n");
+    
     Log.notice("Done - MPU initialized\n");
    }
 
@@ -66,37 +69,41 @@ void setup() {
     else {
       Log.errorln("Can starting procedure failed with error: %s", esp_err_to_name(status));
     }
+
+    
+  tx_msg_mpu.data_length_code=6;
+  tx_msg_mpu.identifier=0x113;
+  tx_msg_mpu.flags=CAN_MSG_FLAG_NONE;
+  tx_msg_mpu2.data_length_code=6;
+  tx_msg_mpu2.identifier=0x114;
+  tx_msg_damp.data_length_code=8;
+  tx_msg_damp.identifier=0x112;
+  tx_msg_damp.flags=CAN_MSG_FLAG_NONE;
 }
 
 
 void loop() {
-  twai_message_t tx_msg_mpu;
-  tx_msg_mpu.data_length_code=11;
-  tx_msg_mpu.identifier=0x111;
-  tx_msg_mpu.flags=CAN_MSG_FLAG_NONE;
+  Log.notice("\n\n********New loop started********\n");
 
-  twai_message_t tx_msg_damp;
-  tx_msg_damp.data_length_code=8;
-  tx_msg_damp.identifier=0x112;
-  tx_msg_damp.flags=CAN_MSG_FLAG_NONE;
   
-  mpu.update();
+  
+  //mpu.update();
 
   #if LOG_LEVEL==LOG_LEVEL_VERBOSE
-  double aX=mpu.getAngleX();
-  double aY=mpu.getAngleY();
-  double aZ=mpu.getAngleZ();
-  double acX=mpu.getAccX();
-  double acY=mpu.getAccY();
-  double acZ=mpu.getAccZ();
-  Log.verboseln("Ax:%F, Ay:%F, Az:%F, ACCx:%F, ACCy:%F, ACCz:%F", aX, aY, aZ, acX, acY, acZ);
+  int16_t ax=0;
+  int16_t ay=0;
+  int16_t az=0;
+  int16_t gx=0;
+  int16_t gy=0;
+  int16_t gz=0;
+  mpu.getMotion6(&ax,&ay,&az,&gx,&gy,&gz);
+  Log.verboseln("Ax:%d, Ay:%d, Az:%d, Gx:%d, Gy:%d, Gz:%d", ax, ay, az, gx, gy, gz);
   
   int d1 = damper1.getVoltage();
   int d2 = damper2.getVoltage();
   int d3 = damper3.getVoltage();
   int d4 = damper4.getVoltage();
-  Log.verboseln("D1: %d, D2: %d, D3: %d, D4: %d", d1, d1, d1, d1);
-  //Log.verboseln("\n D1: %d\n\n", d1);
+  Log.verboseln("D1: %d, D2: %d, D3: %d, D4: %d", d1, d2, d3, d4);
   
  
   tx_msg_damp.data[0]=d1/100;
@@ -108,34 +115,59 @@ void loop() {
   tx_msg_damp.data[6]=d4/100;
   tx_msg_damp.data[7]=d4%100;
 
-  tx_msg_mpu.data[0]=int(aX*100)/100;
-  tx_msg_mpu.data[1]=int(aX*100)%100;
-  tx_msg_mpu.data[2]=int(aY*100)/100;
-  tx_msg_mpu.data[3]=int(aY*100)%100;
-  tx_msg_mpu.data[3]=int(aZ*100)/100;
-  tx_msg_mpu.data[4]=int(aZ*100)%100;
-  tx_msg_mpu.data[5]=int(acX*100)/100;
-  tx_msg_mpu.data[6]=int(acX*100)%100;
-  tx_msg_mpu.data[7]=int(acY*100)/100;
-  tx_msg_mpu.data[8]=int(acY*100)%100;
-  tx_msg_mpu.data[9]=int(acZ*100)/100;
-  tx_msg_mpu.data[10]=int(acZ*100)%100;
-  #else
-  tx_msg_damp.data[0]=damper1.getVoltage();
-  tx_msg_damp.data[1]=damper2.getVoltage();
-  tx_msg_damp.data[2]=damper3.getVoltage();
-  tx_msg_damp.data[3]=damper4.getVoltage();
+  convert(ax, tx_msg_mpu.data);
+  convert(ay, tx_msg_mpu.data+2);
+  convert(az, tx_msg_mpu.data+4);
 
-  tx_msg_mpu.data[0]=mpu.getAngleX();
-  tx_msg_mpu.data[1]=mpu.getAngleY();
-  tx_msg_mpu.data[2]=mpu.getAngleZ();
-  tx_msg_mpu.data[3]=mpu.getAccX();
-  tx_msg_mpu.data[4]=mpu.getAccY();
-  tx_msg_mpu.data[5]=mpu.getAccZ();
+  convert(gx, tx_msg_mpu2.data);
+  convert(gy, tx_msg_mpu2.data+2);
+  convert(gz, tx_msg_mpu2.data+4);
+
+ 
+  Serial.println(tx_msg_mpu2.data[0]);
+  Serial.println(tx_msg_mpu2.data[1]);
+  Serial.println(tx_msg_mpu2.data[2]);
+  Serial.println(tx_msg_mpu2.data[3]);
+  Serial.println(tx_msg_mpu2.data[4]);
+  Serial.println(tx_msg_mpu2.data[5]);
+  
+   
+  #else
+
+
+  tx_msg_damp.data[0]=damper1.getVoltage()/100;
+  tx_msg_damp.data[1]=damper1.getVoltage()%100;
+  tx_msg_damp.data[2]=damper2.getVoltage()/100;
+  tx_msg_damp.data[3]=damper2.getVoltage()%100;
+  tx_msg_damp.data[4]=damper3.getVoltage()/100;
+  tx_msg_damp.data[5]=damper3.getVoltage()%100;
+  tx_msg_damp.data[6]=damper4.getVoltage()/100;
+  tx_msg_damp.data[7]=damper4.getVoltage()%100;
+  
+  int16_t ax=0;
+  int16_t ay=0;
+  int16_t az=0;
+  int16_t gx=0;
+  int16_t gy=0;
+  int16_t gz=0;
+  mpu.getMotion6(&ax,&ay,&az,&gx,&gy,&gz);
+
+  convert(ax, tx_msg_mpu.data);
+  convert(ay, tx_msg_mpu.data+2);
+  convert(az, tx_msg_mpu.data+4);
+
+  convert(gx, tx_msg_mpu2.data);
+  convert(gy, tx_msg_mpu2.data+2);
+  convert(gz, tx_msg_mpu2.data+4);
+
+
+
+ 
   #endif
   
-  status = can_transmit(&tx_msg_damp, pdMS_TO_TICKS(1000));
-  if(status==ESP_OK) {
+  
+  status = can_transmit(&tx_msg_mpu, pdMS_TO_TICKS(1000));
+   if(status==ESP_OK) {
     Log.noticeln("Can message sent");
   }
   else {
@@ -144,18 +176,28 @@ void loop() {
     can_driver_uninstall();
     can_driver_install(&g_config, &t_config, &f_config);
     status = can_start();
-    if(status==ESP_OK) Log.errorln("Can driver restarted");
+    if(status==ESP_OK) Log.error("Can driver restarted");
   }
 
-  
-  status = can_transmit(&tx_msg_mpu, pdMS_TO_TICKS(1000));
-  Serial.println(status);
-  Serial.println(esp_err_to_name(status));
-   if(status==ESP_OK) {
+    status = can_transmit(&tx_msg_mpu2, pdMS_TO_TICKS(1000));
+    if(status==ESP_OK) {
+    Log.noticeln("Can message sent");
+    }
+    else {
+    Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
+    can_stop();
+    can_driver_uninstall();
+    can_driver_install(&g_config, &t_config, &f_config);
+    status = can_start();
+    if(status==ESP_OK) Log.error("Can driver restarted");
+    }
+
+
+  status = can_transmit(&tx_msg_damp, pdMS_TO_TICKS(1000));
+  if(status==ESP_OK) {
     Log.noticeln("Can message sent");
   }
   else {
-    Serial.println(esp_err_to_name(status));
     Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
     can_stop();
     can_driver_uninstall();
