@@ -2,4 +2,4 @@
 #include <cstdint>
 
 
-void convert(int16_t x, uint8_t* data);
+void convert(float x, uint8_t* data);
