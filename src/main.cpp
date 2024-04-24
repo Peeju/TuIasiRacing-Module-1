@@ -34,6 +34,7 @@ static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
 
 twai_message_t tx_msg_mpu;
 twai_message_t tx_msg_damp;
+twai_message_t tx_msg_acc;
 
 void setup() {
   Serial.begin(9600);
@@ -60,9 +61,14 @@ void setup() {
   tx_msg_mpu.data_length_code=8;
   tx_msg_mpu.identifier=0x113;
   tx_msg_mpu.flags=CAN_MSG_FLAG_NONE;
+
   tx_msg_damp.data_length_code=8;
   tx_msg_damp.identifier=0x112;
   tx_msg_damp.flags=CAN_MSG_FLAG_NONE;
+
+  tx_msg_acc.data_length_code=3;
+  tx_msg_acc.identifier=0x111; //de verif daca e ok
+  tx_msg_acc.flags=CAN_MSG_FLAG_NONE;
 }
 
 
@@ -152,7 +158,8 @@ void loop() {
   // convert(gy, tx_msg_mpu2.data+2);
   // convert(gz, tx_msg_mpu2.data+4);
   
-  float roll=MPU.getRoll();
+
+  float roll = MPU.getRoll();
   float pitch = MPU.getPitch();
   float yaw = MPU.getYaw();
 
@@ -162,8 +169,10 @@ void loop() {
   // //* that corresponds to its position gets converted to one
   // //* Example: if (second value is negative) then 0000+2=0010;
 
+ 
 
   tx_msg_mpu.data[6]=0;
+  //roll
   if(roll >= 0) {
     convert(roll, tx_msg_mpu.data);
 
@@ -172,6 +181,7 @@ void loop() {
     convert(roll*-1, tx_msg_mpu.data);
     tx_msg_mpu.data[6]= tx_msg_mpu.data[6]+1; 
   }
+  //pitch
   if(pitch >= 0) {
     convert(pitch, tx_msg_mpu.data+2);
   }
@@ -179,6 +189,7 @@ void loop() {
     convert(pitch*-1, tx_msg_mpu.data+2);
     tx_msg_mpu.data[6]= tx_msg_mpu.data[6]+2; 
   }
+  //yaw
   if(yaw >= 0) {
     convert(yaw, tx_msg_mpu.data+4);
   }
@@ -186,6 +197,11 @@ void loop() {
     convert(yaw*-1, tx_msg_mpu.data+4);
     tx_msg_mpu.data[6]= tx_msg_mpu.data[6]+4; 
   }
+
+  //accel
+  tx_msg_acc.data[0] = MPU.currentData.accelX;
+  tx_msg_acc.data[1] = MPU.currentData.accelY;
+  tx_msg_acc.data[2] = MPU.currentData.accelZ;
  
   #endif
   
@@ -203,18 +219,18 @@ void loop() {
     if(status==ESP_OK) Log.error("Can driver restarted");
   }
 
-  //   status = can_transmit(&tx_msg_mpu2, pdMS_TO_TICKS(1000));
-  //   if(status==ESP_OK) {
-  //   Log.noticeln("Can message sent");
-  //   }
-  //   else {
-  //   Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
-  //   can_stop();
-  //   can_driver_uninstall();
-  //   can_driver_install(&g_config, &t_config, &f_config);
-  //   status = can_start();
-  //   if(status==ESP_OK) Log.error("Can driver restarted");
-  //   }
+  status = can_transmit(&tx_msg_acc, pdMS_TO_TICKS(1000));
+   if(status==ESP_OK) {
+    //Log.noticeln("Can message sent");
+  }
+  else {
+    Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
+    can_stop();
+    can_driver_uninstall();
+    can_driver_install(&g_config, &t_config, &f_config);
+    status = can_start();
+    if(status==ESP_OK) Log.error("Can driver restarted");
+  }
 
   
   status = can_transmit(&tx_msg_damp, pdMS_TO_TICKS(1000));
@@ -229,6 +245,5 @@ void loop() {
     status = can_start();
     if(status==ESP_OK) Log.errorln("Can driver restarted");
   }
-  //delay(300);
   
 }

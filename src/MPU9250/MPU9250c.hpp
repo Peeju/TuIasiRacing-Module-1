@@ -24,7 +24,7 @@ public:
 
 
 
-private:
+public:
     int status;
     
     struct SensorData {
