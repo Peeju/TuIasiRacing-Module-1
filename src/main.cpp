@@ -199,9 +199,9 @@ void loop() {
   }
 
   //accel
-  tx_msg_acc.data[0] = MPU.currentData.accelX;
-  tx_msg_acc.data[1] = MPU.currentData.accelY;
-  tx_msg_acc.data[2] = MPU.currentData.accelZ;
+  tx_msg_acc.data[0] = MPU.currentData.accelX*1000;
+  tx_msg_acc.data[1] = MPU.currentData.accelY*1000;
+  tx_msg_acc.data[2] = MPU.currentData.accelZ*1000;
  
   #endif
   
