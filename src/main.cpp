@@ -9,7 +9,7 @@
 
 #define TX_GPIO_NUM   GPIO_NUM_14
 #define RX_GPIO_NUM   GPIO_NUM_27
-#define LOG_LEVEL LOG_LEVEL_FATAL
+#define LOG_LEVEL LOG_LEVEL_VERBOSE
 
 
 MPU9250c MPU;
@@ -40,7 +40,7 @@ void setup() {
   Serial.begin(9600);
   Log.begin(LOG_LEVEL, &Serial);
   MPU.begin();
-
+ 
     status = can_driver_install(&g_config, &t_config, &f_config);
     if(status==ESP_OK){
       Log.noticeln("Can driver installed");
@@ -129,6 +129,14 @@ void loop() {
     convert(yaw*-1, tx_msg_mpu.data+4);
     tx_msg_mpu.data[6]= tx_msg_mpu.data[6]+4; 
   }
+  //todo get pentru acceleratii 
+  float ax = MPU.currentData.accelX;
+  float ay = MPU.currentData.accelY; 
+  float az = MPU.currentData.accelZ;
+  Log.verbose("ax =  %F ay = %F az = %F ", ax, ay ,az);
+  convert(ax, tx_msg_acc.data);
+  convert(ay, tx_msg_acc.data+2);
+  convert(az, tx_msg_acc.data+4);
   
   #else
 
@@ -199,9 +207,9 @@ void loop() {
   }
 
   //accel
-  tx_msg_acc.data[0] = MPU.currentData.accelX;
-  tx_msg_acc.data[1] = MPU.currentData.accelY;
-  tx_msg_acc.data[2] = MPU.currentData.accelZ;
+  convert(MPU.currentData.accelX, tx_msg_acc.data);
+  convert(MPU.currentData.accelY, tx_msg_acc.data+2);
+  convert(MPU.currentData.accelZ, tx_msg_acc.data+4);
  
   #endif
   
