@@ -65,8 +65,8 @@ void setup() {
   tx_msg_damp.data_length_code=8;
   tx_msg_damp.identifier=0x112;
   tx_msg_damp.flags=CAN_MSG_FLAG_NONE;
-
-  tx_msg_acc.data_length_code=3;
+  //todo ultimii 2 biti din can frame probabil nefolositi
+  tx_msg_acc.data_length_code=8;
   tx_msg_acc.identifier=0x111; //de verif daca e ok
   tx_msg_acc.flags=CAN_MSG_FLAG_NONE;
 }
