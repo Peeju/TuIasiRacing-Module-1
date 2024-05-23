@@ -73,7 +73,7 @@ void setup() {
 
 
 void loop() {
-  Log.notice("\n\n********New loop started********\n");
+  //Log.notice("\n\n********New loop started********\n");
 
   
   
@@ -85,7 +85,7 @@ void loop() {
   int d2 = damper2.getVoltage();
   int d3 = damper3.getVoltage();
   int d4 = damper4.getVoltage();
-  Log.verboseln("D1: %d, D2: %d, D3: %d, D4: %d", d1, d2, d3, d4);
+  //Log.verboseln("D1: %d, D2: %d, D3: %d, D4: %d", d1, d2, d3, d4);
   
  
   tx_msg_damp.data[0]=d1/100;
@@ -100,12 +100,12 @@ void loop() {
   float roll=MPU.getRoll();
   float pitch = MPU.getPitch();
   float yaw = MPU.getYaw();
-  Serial.print("Roll:   ");
-  Serial.print(roll);
-  Serial.print("  Pitch: ");
-  Serial.print(pitch);
-  Serial.print("  Yaw: ");
-  Serial.println(yaw);
+  // Serial.print("Roll:   ");
+  // Serial.print(roll);
+  // Serial.print("  Pitch: ");
+  // Serial.print(pitch);
+  // Serial.print("  Yaw: ");
+  // Serial.println(yaw);
   tx_msg_mpu.data[6]=0;
   if(roll >= 0) {
     convert(roll, tx_msg_mpu.data);
@@ -133,7 +133,7 @@ void loop() {
   float ax = MPU.currentData.accelX;
   float ay = MPU.currentData.accelY; 
   float az = MPU.currentData.accelZ;
-  Log.verbose("ax =  %F ay = %F az = %F ", ax, ay ,az);
+  // Log.verbose("ax =  %F ay = %F az = %F ", ax, ay ,az);
   convert(ax, tx_msg_acc.data);
   convert(ay, tx_msg_acc.data+2);
   convert(az, tx_msg_acc.data+4);
