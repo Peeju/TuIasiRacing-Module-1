@@ -36,25 +36,6 @@ twai_message_t tx_msg_mpu;
 twai_message_t tx_msg_damp;
 twai_message_t tx_msg_acc;
 
-float KalmanD1 = 0, KalmanUncertaintyD1 = 2 * 2;
-float KalmanD2 = 0, KalmanUncertaintyD2 = 2 * 2;
-float KalmanD3 = 0, KalmanUncertaintyD3 = 2 * 2;
-float KalmanD4 = 0, KalmanUncertaintyD4 = 2 * 2;
-float Kalman1DOutput[2] = { 0, 0 };
-void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanMeasurement){
-    //KalmanState = KalmanState + 0.1 * KalmanInput;
-
-    KalmanUncertainty = KalmanUncertainty + 0.5 * 0.5 * 2 * 2;
-
-    float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + 2 * 2);
-
-    KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState);
-
-    KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty;
-    Kalman1DOutput[0] = KalmanState;
-    Kalman1DOutput[1] = KalmanUncertainty;
-}
-
 void setup() {
   Serial.begin(9600);
   Log.begin(LOG_LEVEL, &Serial);
@@ -158,20 +139,12 @@ void loop() {
   convert(az, tx_msg_acc.data+4);
   
   #else
-  kalman_1d(KalmanD1, KalmanUncertaintyD1, damper1.getVoltage());
-    KalmanD1 = Kalman1DOutput[0];
-    KalmanUncertaintyD1 = Kalman1DOutput[1];
-  kalman_1d(KalmanD2, KalmanUncertaintyD2, damper2.getVoltage());
-    KalmanD2 = Kalman1DOutput[0];
-    KalmanUncertaintyD2 = Kalman1DOutput[1];
-  kalman_1d(KalmanD3, KalmanUncertaintyD3, damper3.getVoltage());
-    KalmanD3 = Kalman1DOutput[0];
-    KalmanUncertaintyD3 = Kalman1DOutput[1];
-  kalman_1d(KalmanD4, KalmanUncertaintyD4, damper4.getVoltage());
-    KalmanD4 = Kalman1DOutput[0];
-    KalmanUncertaintyD4 = Kalman1DOutput[1];
-
-  //trebuie vazut oleaca cu valori efective si probabil schimbat modul de impartire pe pachete ca ele sunt double
+  
+  float KalmanD1 = damper1.KalmanVoltage();
+  float KalmanD2 = damper2.KalmanVoltage();
+  float KalmanD3 = damper3.KalmanVoltage();
+  float KalmanD4 = damper4.KalmanVoltage();
+    
   tx_msg_damp.data[0]=int(KalmanD1)/100;
   tx_msg_damp.data[1]=int(KalmanD1)%100;
   tx_msg_damp.data[2]=int(KalmanD2)/100;
@@ -180,22 +153,6 @@ void loop() {
   tx_msg_damp.data[5]=int(KalmanD3)%100;
   tx_msg_damp.data[6]=int(KalmanD4)/100;
   tx_msg_damp.data[7]=int(KalmanD4)%100;
-  
-//   int16_t ax=0;
-//   int16_t ay=0;
-//   int16_t az=0;
-//   int16_t gx=0;
-//   int16_t gy=0;
-//   int16_t gz=0;
-// //  mpu.getMotion6(&ax,&ay,&az,&gx,&gy,&gz);
-
-  // convert(ax, tx_msg_mpu.data);
-  // convert(ay, tx_msg_mpu.data+2);
-  // convert(az, tx_msg_mpu.data+4);
-
-  // convert(gx, tx_msg_mpu2.data);
-  // convert(gy, tx_msg_mpu2.data+2);
-  // convert(gz, tx_msg_mpu2.data+4);
   
 
   float roll = MPU.getRoll();
