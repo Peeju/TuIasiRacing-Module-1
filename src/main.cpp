@@ -36,6 +36,25 @@ twai_message_t tx_msg_mpu;
 twai_message_t tx_msg_damp;
 twai_message_t tx_msg_acc;
 
+float KalmanD1 = 0, KalmanUncertaintyD1 = 2 * 2;
+float KalmanD2 = 0, KalmanUncertaintyD2 = 2 * 2;
+float KalmanD3 = 0, KalmanUncertaintyD3 = 2 * 2;
+float KalmanD4 = 0, KalmanUncertaintyD4 = 2 * 2;
+float Kalman1DOutput[2] = { 0, 0 };
+void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanMeasurement){
+    //KalmanState = KalmanState + 0.1 * KalmanInput;
+
+    KalmanUncertainty = KalmanUncertainty + 0.5 * 0.5 * 2 * 2;
+
+    float KalmanGain = KalmanUncertainty * 1 / (1 * KalmanUncertainty + 2 * 2);
+
+    KalmanState = KalmanState + KalmanGain * (KalmanMeasurement - KalmanState);
+
+    KalmanUncertainty = (1 - KalmanGain) * KalmanUncertainty;
+    Kalman1DOutput[0] = KalmanState;
+    Kalman1DOutput[1] = KalmanUncertainty;
+}
+
 void setup() {
   Serial.begin(9600);
   Log.begin(LOG_LEVEL, &Serial);
@@ -139,16 +158,28 @@ void loop() {
   convert(az, tx_msg_acc.data+4);
   
   #else
+  kalman_1d(KalmanD1, KalmanUncertaintyD1, damper1.getVoltage());
+    KalmanD1 = Kalman1DOutput[0];
+    KalmanUncertaintyD1 = Kalman1DOutput[1];
+  kalman_1d(KalmanD2, KalmanUncertaintyD2, damper2.getVoltage());
+    KalmanD2 = Kalman1DOutput[0];
+    KalmanUncertaintyD2 = Kalman1DOutput[1];
+  kalman_1d(KalmanD3, KalmanUncertaintyD3, damper3.getVoltage());
+    KalmanD3 = Kalman1DOutput[0];
+    KalmanUncertaintyD3 = Kalman1DOutput[1];
+  kalman_1d(KalmanD4, KalmanUncertaintyD4, damper4.getVoltage());
+    KalmanD4 = Kalman1DOutput[0];
+    KalmanUncertaintyD4 = Kalman1DOutput[1];
 
-
-  tx_msg_damp.data[0]=damper1.getVoltage()/100;
-  tx_msg_damp.data[1]=damper1.getVoltage()%100;
-  tx_msg_damp.data[2]=damper2.getVoltage()/100;
-  tx_msg_damp.data[3]=damper2.getVoltage()%100;
-  tx_msg_damp.data[4]=damper3.getVoltage()/100;
-  tx_msg_damp.data[5]=damper3.getVoltage()%100;
-  tx_msg_damp.data[6]=damper4.getVoltage()/100;
-  tx_msg_damp.data[7]=damper4.getVoltage()%100;
+  //trebuie vazut oleaca cu valori efective si probabil schimbat modul de impartire pe pachete ca ele sunt double
+  tx_msg_damp.data[0]=int(KalmanD1);
+  tx_msg_damp.data[1]=int(KalmanD1-int(KalmanD1));
+  tx_msg_damp.data[2]=int(KalmanD2);
+  tx_msg_damp.data[3]=int(KalmanD2-int(KalmanD2));
+  tx_msg_damp.data[4]=int(KalmanD3);
+  tx_msg_damp.data[5]=int(KalmanD3-int(KalmanD3));
+  tx_msg_damp.data[6]=int(KalmanD4);
+  tx_msg_damp.data[7]=int(KalmanD4-int(KalmanD4));
   
 //   int16_t ax=0;
 //   int16_t ay=0;
