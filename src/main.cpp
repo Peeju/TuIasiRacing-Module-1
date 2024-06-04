@@ -172,14 +172,14 @@ void loop() {
     KalmanUncertaintyD4 = Kalman1DOutput[1];
 
   //trebuie vazut oleaca cu valori efective si probabil schimbat modul de impartire pe pachete ca ele sunt double
-  tx_msg_damp.data[0]=int(KalmanD1);
-  tx_msg_damp.data[1]=int(KalmanD1-int(KalmanD1));
-  tx_msg_damp.data[2]=int(KalmanD2);
-  tx_msg_damp.data[3]=int(KalmanD2-int(KalmanD2));
-  tx_msg_damp.data[4]=int(KalmanD3);
-  tx_msg_damp.data[5]=int(KalmanD3-int(KalmanD3));
-  tx_msg_damp.data[6]=int(KalmanD4);
-  tx_msg_damp.data[7]=int(KalmanD4-int(KalmanD4));
+  tx_msg_damp.data[0]=int(KalmanD1)/100;
+  tx_msg_damp.data[1]=int(KalmanD1)%100;
+  tx_msg_damp.data[2]=int(KalmanD2)/100;
+  tx_msg_damp.data[3]=int(KalmanD2)%100;
+  tx_msg_damp.data[4]=int(KalmanD3)/100;
+  tx_msg_damp.data[5]=int(KalmanD3)%100;
+  tx_msg_damp.data[6]=int(KalmanD4)/100;
+  tx_msg_damp.data[7]=int(KalmanD4)%100;
   
 //   int16_t ax=0;
 //   int16_t ay=0;
