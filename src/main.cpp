@@ -139,32 +139,20 @@ void loop() {
   convert(az, tx_msg_acc.data+4);
   
   #else
-
-
-  tx_msg_damp.data[0]=damper1.getVoltage()/100;
-  tx_msg_damp.data[1]=damper1.getVoltage()%100;
-  tx_msg_damp.data[2]=damper2.getVoltage()/100;
-  tx_msg_damp.data[3]=damper2.getVoltage()%100;
-  tx_msg_damp.data[4]=damper3.getVoltage()/100;
-  tx_msg_damp.data[5]=damper3.getVoltage()%100;
-  tx_msg_damp.data[6]=damper4.getVoltage()/100;
-  tx_msg_damp.data[7]=damper4.getVoltage()%100;
   
-//   int16_t ax=0;
-//   int16_t ay=0;
-//   int16_t az=0;
-//   int16_t gx=0;
-//   int16_t gy=0;
-//   int16_t gz=0;
-// //  mpu.getMotion6(&ax,&ay,&az,&gx,&gy,&gz);
-
-  // convert(ax, tx_msg_mpu.data);
-  // convert(ay, tx_msg_mpu.data+2);
-  // convert(az, tx_msg_mpu.data+4);
-
-  // convert(gx, tx_msg_mpu2.data);
-  // convert(gy, tx_msg_mpu2.data+2);
-  // convert(gz, tx_msg_mpu2.data+4);
+  float KalmanD1 = damper1.KalmanVoltage();
+  float KalmanD2 = damper2.KalmanVoltage();
+  float KalmanD3 = damper3.KalmanVoltage();
+  float KalmanD4 = damper4.KalmanVoltage();
+    
+  tx_msg_damp.data[0]=int(KalmanD1)/100;
+  tx_msg_damp.data[1]=int(KalmanD1)%100;
+  tx_msg_damp.data[2]=int(KalmanD2)/100;
+  tx_msg_damp.data[3]=int(KalmanD2)%100;
+  tx_msg_damp.data[4]=int(KalmanD3)/100;
+  tx_msg_damp.data[5]=int(KalmanD3)%100;
+  tx_msg_damp.data[6]=int(KalmanD4)/100;
+  tx_msg_damp.data[7]=int(KalmanD4)%100;
   
 
   float roll = MPU.getRoll();
