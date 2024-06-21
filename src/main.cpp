@@ -9,7 +9,7 @@
 
 #define TX_GPIO_NUM   GPIO_NUM_14
 #define RX_GPIO_NUM   GPIO_NUM_27
-#define LOG_LEVEL LOG_LEVEL_NOTICE
+#define LOG_LEVEL LOG_LEVEL_VERBOSE
 
 
 MPU9250c MPU;
@@ -66,7 +66,7 @@ void setup() {
   tx_msg_damp.identifier=0x112;
   tx_msg_damp.flags=CAN_MSG_FLAG_NONE;
 
-  tx_msg_acc.data_length_code=3;
+  tx_msg_acc.data_length_code=6;
   tx_msg_acc.identifier=0x111; //de verif daca e ok
   tx_msg_acc.flags=CAN_MSG_FLAG_NONE;
 }
@@ -216,7 +216,7 @@ void loop() {
   
   status = can_transmit(&tx_msg_mpu, pdMS_TO_TICKS(1000));
    if(status==ESP_OK) {
-    //Log.noticeln("Can message sent");
+    Log.noticeln("Can message sent");
   }
   else {
     Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
@@ -229,7 +229,7 @@ void loop() {
 
   status = can_transmit(&tx_msg_acc, pdMS_TO_TICKS(1000));
    if(status==ESP_OK) {
-    //Log.noticeln("Can message sent");
+    Log.noticeln("Can message sent");
   }
   else {
     Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
@@ -243,7 +243,7 @@ void loop() {
   
   status = can_transmit(&tx_msg_damp, pdMS_TO_TICKS(1000));
   if(status==ESP_OK) {
-    //Log.noticeln("Can message sent");
+    Log.noticeln("Can message sent");
   }
   else {
     Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
