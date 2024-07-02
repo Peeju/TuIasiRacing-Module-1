@@ -35,6 +35,7 @@ static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
 twai_message_t tx_msg_mpu;
 twai_message_t tx_msg_damp;
 twai_message_t tx_msg_acc;
+twai_message_t tx_msg_gyro;
 
 void setup() {
   Serial.begin(9600);
@@ -67,8 +68,12 @@ void setup() {
   tx_msg_damp.flags=CAN_MSG_FLAG_NONE;
 
   tx_msg_acc.data_length_code=6;
-  tx_msg_acc.identifier=0x111; //de verif daca e ok
+  tx_msg_acc.identifier=0x111;
   tx_msg_acc.flags=CAN_MSG_FLAG_NONE;
+
+  tx_msg_gyro.data_length_code=6;
+  tx_msg_gyro.identifier=0x107;
+  tx_msg_gyro.flags=CAN_MSG_FLAG_NONE;
 }
 
 
@@ -115,6 +120,7 @@ void loop() {
     convert(roll*-1, tx_msg_mpu.data);
     tx_msg_mpu.data[6]= tx_msg_mpu.data[6]+1; 
   }
+
   if(pitch >= 0) {
     convert(pitch, tx_msg_mpu.data+2);
   }
@@ -122,6 +128,7 @@ void loop() {
     convert(pitch*-1, tx_msg_mpu.data+2);
     tx_msg_mpu.data[6]= tx_msg_mpu.data[6]+2; 
   }
+
   if(yaw >= 0) {
     convert(yaw, tx_msg_mpu.data+4);
   }
@@ -129,14 +136,21 @@ void loop() {
     convert(yaw*-1, tx_msg_mpu.data+4);
     tx_msg_mpu.data[6]= tx_msg_mpu.data[6]+4; 
   }
-  //todo get pentru acceleratii 
+
+  //todo get pentru acceleratii si gyro
   float ax = MPU.currentData.accelX;
   float ay = MPU.currentData.accelY; 
   float az = MPU.currentData.accelZ;
-  // Log.verbose("ax =  %F ay = %F az = %F ", ax, ay ,az);
   convert(ax, tx_msg_acc.data);
   convert(ay, tx_msg_acc.data+2);
   convert(az, tx_msg_acc.data+4);
+
+  float gx = MPU.currentData.gyroX;
+  float gy = MPU.currentData.gyroY; 
+  float gz = MPU.currentData.gyroZ;
+  convert(gx, tx_msg_gyro.data);
+  convert(gy, tx_msg_gyro.data+2);
+  convert(gz, tx_msg_gyro.data+4);
   
   #else
   
@@ -228,6 +242,18 @@ void loop() {
     if(status==ESP_OK) Log.error("Can driver restarted");
   }
 
+  status = can_transmit(&tx_msg_gyro, pdMS_TO_TICKS(1000));
+   if(status==ESP_OK) {
+    Log.noticeln("Can message sent");
+  }
+  else {
+    Log.errorln("Can message sending failed with error code: %s ;\nRestarting CAN driver", esp_err_to_name(status));
+    can_stop();
+    can_driver_uninstall();
+    can_driver_install(&g_config, &t_config, &f_config);
+    status = can_start();
+    if(status==ESP_OK) Log.error("Can driver restarted");
+  }
   
   status = can_transmit(&tx_msg_damp, pdMS_TO_TICKS(1000));
   if(status==ESP_OK) {
