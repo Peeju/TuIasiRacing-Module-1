@@ -20,9 +20,9 @@ u_int16_t status;
 
 
 adcObj damper1(ADC1_CHANNEL_4);
-adcObj damper2(ADC1_CHANNEL_4);
-adcObj damper3(ADC1_CHANNEL_4);
-adcObj damper4(ADC1_CHANNEL_4);
+adcObj damper2(ADC1_CHANNEL_5);
+adcObj damper3(ADC1_CHANNEL_7);
+adcObj damper4(ADC1_CHANNEL_6);
 
 static const can_general_config_t g_config = {.mode = TWAI_MODE_NO_ACK, .tx_io = TX_GPIO_NUM, .rx_io = RX_GPIO_NUM,        
                                                                     .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,      
