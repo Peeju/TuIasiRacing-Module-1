@@ -9,7 +9,7 @@
 
 #define TX_GPIO_NUM   GPIO_NUM_14
 #define RX_GPIO_NUM   GPIO_NUM_27
-#define LOG_LEVEL LOG_LEVEL_VERBOSE
+#define LOG_LEVEL LOG_LEVEL_ERROR
 
 
 MPU9250c MPU;
@@ -79,9 +79,6 @@ void setup() {
 
 void loop() {
   //Log.notice("\n\n********New loop started********\n");
-
-  
-  
   MPU.read();
 
   #if LOG_LEVEL==LOG_LEVEL_VERBOSE
@@ -212,6 +209,11 @@ void loop() {
   convert(MPU.currentData.accelX, tx_msg_acc.data);
   convert(MPU.currentData.accelY, tx_msg_acc.data+2);
   convert(MPU.currentData.accelZ, tx_msg_acc.data+4);
+
+  //gyro
+  convert(MPU.currentData.gyroX, tx_msg_gyro.data);
+  convert(MPU.currentData.gyroY, tx_msg_gyro.data+2);
+  convert(MPU.currentData.gyroZ, tx_msg_gyro.data+4);
  
   #endif
   
